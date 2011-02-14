@@ -79,11 +79,10 @@ function post(cmd, blind) {
     setHistory(history);  
   }
   run(cmd)
-  echo(cmd);    
+  echo(cmd);
 }
 
 window.addEventListener("message", function (event) {
-  try {
     // order so it appears at the top  
     var el = document.createElement('div'),
         li = document.createElement('li'),
@@ -91,7 +90,8 @@ window.addEventListener("message", function (event) {
         parent = output.parentNode,
         response = JSON.parse(event.data)
 
-    event.preventDefault();
+    if (!response[1]) return;
+    event.stopPropagation();
     el.className = 'response';
     span.innerHTML = response[1];
 
@@ -117,7 +117,6 @@ window.addEventListener("message", function (event) {
       }
     }
     pos = history.length;
-  } catch(e) {}
 }, false);
 
 function log(msg, className) {
@@ -137,7 +136,9 @@ function echo(cmd) {
   var li = document.createElement('li');
 
   li.className = 'echo';
-  li.innerHTML = '<span class="gutter"></span><div>' + cleanse(cmd) + '<a href="/?' + encodeURIComponent(cmd) + '" class="permalink" title="permalink">link</a></div>';
+  li.innerHTML = '<span class="gutter"></span><div>' + cleanse(cmd) 
+  //+ '<a href="console:' + encodeURIComponent(cmd) + '" class="permalink" title="permalink">link</a>'
+  + '</div>';
 
   logAfter = output.querySelectorAll('li.echo')[0] || null;
   appendLog(li, true);
@@ -739,11 +740,13 @@ exec.onclick = function () {
   cursor.focus();
 }
 
+
 if (window.location.search) {
   post(decodeURIComponent(window.location.search.substr(1)));
 } else {
   post(':help', true);
 }
+
 
 window.onpopstate = function (event) {
   setCursorTo(event.state);
