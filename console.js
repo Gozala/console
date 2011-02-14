@@ -65,13 +65,9 @@ function run(cmd) {
   if (internalCmd) {
     return ['info', internalCmd];
   } else {
-    try {
-      rawoutput = sandboxframe.contentWindow.eval(cmd);
-    } catch (e) {
-      rawoutput = e.message;
-      className = 'error';
-    }
-    return [className, cleanse(stringify(rawoutput))];
+      window.postMessage(JSON.stringify({
+        cmd: cmd
+      }), "*");
   } 
 }
 
@@ -82,42 +78,47 @@ function post(cmd, blind) {
     history.push(cmd);
     setHistory(history);  
   }
-  
+  run(cmd)
   echo(cmd);    
-
-  // order so it appears at the top  
-  var el = document.createElement('div'),
-      li = document.createElement('li'),
-      span = document.createElement('span'),
-      parent = output.parentNode, 
-      response = run(cmd);
-
-  el.className = 'response';
-  span.innerHTML = response[1];
-
-  if (response[0] != 'info') prettyPrint([span]);
-  el.appendChild(span);
-
-  li.className = response[0];
-  li.innerHTML = '<span class="gutter"></span>';
-  li.appendChild(el);
-
-  appendLog(li);
-    
-  output.parentNode.scrollTop = 0;
-  if (!body.className) {
-    exec.value = '';
-    if (enableCC) {
-      try {
-        document.querySelector('a').focus();
-        cursor.focus();
-        document.execCommand('selectAll', false, null);
-        document.execCommand('delete', false, null);
-      } catch (e) {}
-    }
-  }
-  pos = history.length;
 }
+
+window.addEventListener("message", function (event) {
+  try {
+    // order so it appears at the top  
+    var el = document.createElement('div'),
+        li = document.createElement('li'),
+        span = document.createElement('span'),
+        parent = output.parentNode,
+        response = JSON.parse(event.data)
+
+    event.preventDefault();
+    el.className = 'response';
+    span.innerHTML = response[1];
+
+    if (response[0] != 'info') prettyPrint([span]);
+    el.appendChild(span);
+
+    li.className = response[0];
+    li.innerHTML = '<span class="gutter"></span>';
+    li.appendChild(el);
+
+    appendLog(li);
+      
+    output.parentNode.scrollTop = 0;
+    if (!body.className) {
+      exec.value = '';
+      if (enableCC) {
+        try {
+          document.querySelector('a').focus();
+          cursor.focus();
+          document.execCommand('selectAll', false, null);
+          document.execCommand('delete', false, null);
+        } catch (e) {}
+      }
+    }
+    pos = history.length;
+  } catch(e) {}
+}, false);
 
 function log(msg, className) {
   var li = document.createElement('li'),
@@ -512,7 +513,7 @@ function about() {
   return 'Built by <a target="_new" href="http://twitter.com/rem">@rem</a>';
 }
 
-
+/*
 document.addEventListener ? 
   window.addEventListener('message', function (event) {
     post(event.data);
@@ -520,6 +521,7 @@ document.addEventListener ?
   window.attachEvent('onmessage', function () {
     post(window.event.data);
   });
+*/
 
 var exec = document.getElementById('exec'),
     form = exec.form || {},
